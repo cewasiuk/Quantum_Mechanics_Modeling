@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Mon Feb  1 20:27:14 2021
+
+@author: chrisewasiuk
+"""
+import matplotlib.pyplot as plt
+import math 
+
+    ##################### PART 1 ##########################
+#SAHA equation will be input into quad formula where necessary
+def SAHA(rho, T):
+    A = (4.02*10**-6) #All coefficients outside of exponential
+    D = (1.58*10**5) #Chi (1/K)
+    return A*T**(3/2)/rho*2.718281**(-D/T)
+
+#quadratic function makes life easier
+def quad(a,b,c):
+    return (-b+ math.sqrt(b**2-4*a*c))/(2*a)
+
+def pressure(rho,T,weeb): #function for pressure
+    return rho*(1+weeb)*(8.617*10**-5)*T/(1.67*10**-27)
+
+def e_density(rho,pressure,weeb): #energy density function
+    return 3/2*pressure+rho*weeb*(2.18*10**-18)/(1.67*10**-27)
+
+def dPdU(rho,T,weeb): #derivative of Pressure with respect to Energy Density
+
+    dxdT = weeb/T
+    dPdT = rho/(1.67*10**-27)*(1+weeb)*(1.38*10**-23)+rho/(1.67*10**-27)*dxdT*(1.38*10**-23)*T
+    dUdT = 3/2*dPdT + rho*(2.18*10**-18)/(1.67*10**-27)*dxdT
+    return dPdT*dUdT**(-1)
+
+    
+def main():
+    rho1 = 10**-7
+    rho2 = 10**-5
+    rho3 = 10**-3
+    rho4 = 10**-6
+
+    
+    T_data=[] #lists for data 
+    rho1_data=[]
+    rho2_data=[]
+    rho3_data=[]
+    
+    
+    #RHO1
+    for T in range(5000,26000,10): #insert range after checking eq.
+        a = 1    
+        b = SAHA(rho1, T)
+        c = -SAHA(rho1, T)
+        weeb = quad(a,b,c)
+        rho1_data.append(weeb)#SAHA eq output
+        T_data.append(T)
+        
+    #RHO2
+    for T in range(5000,26000,10): #insert range after checking eq.
+        a = 1    
+        b = SAHA(rho2, T)
+        c = -SAHA(rho2, T)
+        weeb = quad(a,b,c)
+        rho2_data.append(weeb)#SAHA eq output 
+        
+    #RHO3
+    for T in range(5000,26000,10): 
+        a = 1    
+        b = SAHA(rho3, T)
+        c = -SAHA(rho3, T)
+        weeb = quad(a,b,c)
+        rho3_data.append(weeb)#SAHA eq output
+        
+        
+    plot1 = plt.figure(1)   
+    plt.plot(T_data,rho1_data,"g")  
+    plt.plot(T_data,rho2_data,"b")  
+    plt.plot(T_data,rho3_data,"r") 
+    plt.title('Ionization Fraction for Various Functions of Rho')     
+    plt.xlabel("Temperature (Kelvin)")
+    plt.ylabel("Ionization Fraction")
+    plt.legend(['Rho1 = 10^-7 kg/m^3','Rho2 = 10^-5 kg/m^3','Rho3 = 10^-3 kg/m^3'])
+
+    
+    ##################### PART 2 ##########################
+    P=[]
+    U=[]
+    T_p=[]
+    
+    for T in range(5000,40000,10): 
+        a = 1    
+        b = SAHA(rho3, T)
+        c = -SAHA(rho3, T)
+        weeb = quad(a,b,c)
+        p = pressure(rho3,T,weeb)
+        U.append(e_density(rho3,p,weeb))
+        P.append(p)
+        T_p.append(T)
+    
+    plot2 = plt.figure(2) 
+    plt.plot(T_p,P,"g")  
+    plt.plot(T_p,U,'r')
+    plt.title('Pressure and Internal Energy Density vs Temperature')     
+    plt.xlabel("Temperature (Kelvin)")
+    plt.ylabel("Energy/Volume (J/m^3)")
+    plt.legend(['Pressure','Energy Density'])
+
+
+    ##################### PART 3 ##########################
+    dP=[]
+    T_p=[]
+    
+    for T in range(5000,40000):
+        a = 1    
+        b = SAHA(rho3, T)
+        c = -SAHA(rho3, T)
+        weeb = quad(a,b,c)
+        dP.append(dPdU(rho3,T,weeb))
+        T_p.append(T)
+    
+    plot3 = plt.figure(3)   
+    plt.plot(T_p,dP,"g")  
+    plt.title('Derivative of Pressure with Respect to Energy Density')     
+    plt.xlabel("Temperature (Kelvin)")
+    plt.ylabel("Ratio")
+    plt.show()
+# In the limit that the upper bounds of the function for dP/dU approach infinity, the ratio dP/dU approaches 2/3. In the range between 5,000 and 40,000
+# the ratio approaches slightly lower than 1/3. This indicates that as the internal energy density of the system increases, the overall pressure increases
+# by a much smaller factor. This is likely a transition from the electrons being degenerate to becoming exited, where the degeneracy pressure is slightly 
+# lifted. 
+# Could possibly be ultra relativistic in the middle (P -> 1/3), and then becomes classical at high temperatures?? Maybe neutron degeneracy pressure??
+
+    ##################### PROBLEM 2 ##########################
+    ans =[]
+    T_p2=[]
+    for T in range(5000,40000):  
+        a=1
+        b = SAHA(rho4, T)
+        c = -SAHA(rho4, T)
+        weeb = quad(a,b,c)
+        chi = 10.2 #eV
+        kb = 8.617*10**-5 #eV
+        e = 2.71828
+        hydrogen_frac = 2*e**(-chi/kb/T)
+        ans.append(hydrogen_frac*(1-weeb))
+        T_p2.append(T)
+        
+    plot4 = plt.figure(4)   
+    plt.plot(T_p2,ans,"g")  
+    plt.title('Fraction of  Hydrogen in the First Excited State as a Function of Temperature')     
+    plt.xlabel("Temperature (Kelvin)")
+    plt.ylabel("Fraction")
+    plt.show()
+    #change rho value
+        
+                              
+        
+main()
